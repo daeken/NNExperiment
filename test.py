@@ -1,7 +1,13 @@
+from PIL import Image
+
 import json, sys
 from nn import *
 
-testset = json.load(file(sys.argv[1], 'rb'))
+if sys.argv[1].endswith('json'):
+	testset = json.load(file(sys.argv[1], 'rb'))
+else:
+	im = Image.open(sys.argv[1]).convert('L')
+	testset = [[-1, [x / 255. for x in im.getdata()]]]
 
 inputs = InputLayer([0] * 768)
 hidden1 = Layer(16, inputs, bstore='hidden1')
@@ -20,16 +26,19 @@ def costAll():
 		total += cost(evalOne(pixels), expected)
 	return total / len(testset)
 
+output = evalOne(testset[0][1])
+print [int(x * 100) for x in output]
+print output.index(sorted(output)[-1])
+
 """print 'Training'
-for i in xrange(500):
+for i in xrange(1):
 	print 'Training #', i
 	for digit, pixels in testset:
 		inputs.values = pixels
 		expected = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 		expected[digit] = 1
 		outputs.evaluate()
-		outputs.train(expected)
-		outputs.update(0.3)"""
+		outputs.train(0.3, expected)
 
 print 'Evaluating'
 success = 0
@@ -39,4 +48,4 @@ for digit, pixels in testset:
 	if digit == output.index(sorted(output)[-1]):
 		success += 1
 
-print 'Success rate: %i/%i - %i%%' % (success, len(testset), float(success) / len(testset) * 100)
+print 'Success rate: %i/%i - %i%%' % (success, len(testset), float(success) / len(testset) * 100)"""

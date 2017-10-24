@@ -40,30 +40,26 @@ class Layer(object):
 		self.values = [transfer(sum(values[j] * w for j, w in enumerate(self.weights[i][:-1])) + self.weights[i][-1]) for i in xrange(self.count)]
 		return self.values
 
-	def train(self, expected=None, errors=None):
+	def train(self, rate, expected=None, errors=None):
 		if expected is not None:
 			errors = [expected[i] - self.values[i] for i in xrange(self.count)]
 		assert errors is not None
 
-		self.deltas = [errors[i] * transferDerivative(self.values[i]) for i in xrange(self.count)]
+		deltas = [errors[i] * transferDerivative(self.values[i]) for i in xrange(self.count)]
 
-		if self.input.input is not None:
-			prev = self.input
-			perrors = [sum(self.weights[j][i] * self.deltas[j] for j in xrange(self.count)) for i in xrange(prev.count)]
-			self.input.train(errors=perrors)
-
-	def update(self, rate):
 		inputs = self.input.values
 		ilen = self.input.count
 
 		for i in xrange(self.count):
-			delta = self.deltas[i] * rate
+			delta = deltas[i] * rate
 			for j in xrange(ilen):
 				self.weights[i][j] += delta * inputs[j]
 			self.weights[i][-1] += delta
 
 		if self.input.input is not None:
-			self.input.update(rate)
+			prev = self.input
+			perrors = [sum(self.weights[j][i] * deltas[j] for j in xrange(self.count)) for i in xrange(prev.count)]
+			self.input.train(rate, errors=perrors)
 
 class InputLayer(object):
 	def __init__(self, values):
