@@ -9,10 +9,18 @@ else:
 	im = Image.open(sys.argv[1]).convert('L')
 	testset = [[-1, [x / 255. for x in im.getdata()]]]
 
-inputs = InputLayer([0] * 768)
-hidden1 = Layer(16, inputs, bstore='hidden1')
+def toExpected(digit):
+	expected = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+	expected[digit] = 1
+	return expected
+
+testset = [[digit, pixels, toExpected(digit)] for digit, pixels in testset]
+
+inputs = InputLayer([0] * 784)
+hidden1 = Layer(32, inputs, bstore='hidden1')
 hidden2 = Layer(16, hidden1, bstore='hidden2')
-outputs = Layer(10, hidden2, bstore='outputs')
+hidden3 = Layer(16, hidden2, bstore='hidden3')
+outputs = Layer(10, hidden3, bstore='outputs')
 
 def evalOne(data):
 	inputs.values = data
@@ -26,26 +34,26 @@ def costAll():
 		total += cost(evalOne(pixels), expected)
 	return total / len(testset)
 
+"""
 output = evalOne(testset[0][1])
 print [int(x * 100) for x in output]
 print output.index(sorted(output)[-1])
+"""
 
-"""print 'Training'
-for i in xrange(1):
+print 'Training'
+for i in xrange(0):
 	print 'Training #', i
-	for digit, pixels in testset:
+	for digit, pixels, expected in testset:
 		inputs.values = pixels
-		expected = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-		expected[digit] = 1
 		outputs.evaluate()
 		outputs.train(0.3, expected)
 
 print 'Evaluating'
 success = 0
-for digit, pixels in testset:
+for digit, pixels, _ in testset:
 	inputs.values = pixels
 	output = evalOne(pixels)
 	if digit == output.index(sorted(output)[-1]):
 		success += 1
 
-print 'Success rate: %i/%i - %i%%' % (success, len(testset), float(success) / len(testset) * 100)"""
+print 'Success rate: %i/%i - %i%%' % (success, len(testset), float(success) / len(testset) * 100)
